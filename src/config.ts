@@ -1,5 +1,5 @@
 import vscode from 'vscode';
-import { CONFIG_SECTION } from './consts';
+import { CONFIG_SECTION, DEEPSEEK_V4_MAX_OUTPUT_TOKENS } from './consts';
 
 /**
  * Get DeepSeek API base URL from settings.
@@ -7,7 +7,8 @@ import { CONFIG_SECTION } from './consts';
  */
 export function getBaseUrl(): string {
 	const config = vscode.workspace.getConfiguration(CONFIG_SECTION);
-	return config.get<string>('baseUrl') || 'https://api.deepseek.com';
+	const configured = config.get<string>('baseUrl')?.trim();
+	return (configured || 'https://api.deepseek.com').replace(/\/+$/, '');
 }
 
 /**
@@ -31,5 +32,8 @@ export function getApiModelId(vscodeModelId: string): string {
 export function getMaxTokens(): number | undefined {
 	const config = vscode.workspace.getConfiguration(CONFIG_SECTION);
 	const value = config.get<number>('maxTokens', 0);
-	return value > 0 ? value : undefined;
+	if (value <= 0) {
+		return undefined;
+	}
+	return Math.min(value, DEEPSEEK_V4_MAX_OUTPUT_TOKENS);
 }

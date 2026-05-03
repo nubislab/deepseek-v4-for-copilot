@@ -8,25 +8,35 @@ import type { ModelDefinition } from './types';
  */
 
 /** VS Code configuration section prefix for all extension settings. */
-export const CONFIG_SECTION = 'deepseek-copilot';
+export const CONFIG_SECTION = 'deepseek-v4-bridge';
 
 // ---- Secret keys ----
 
 /** SecretStorage key for the DeepSeek API key. */
-export const API_KEY_SECRET = 'deepseek-copilot.apiKey';
+export const API_KEY_SECRET = 'deepseek-v4-bridge.apiKey';
 
 /** memento key tracking whether the welcome walkthrough has been shown. */
-export const WELCOME_SHOWN_KEY = 'deepseek-copilot.welcomeShown';
+export const WELCOME_SHOWN_KEY = 'deepseek-v4-bridge.welcomeShown';
+
+/** memento key storing token-count calibration learned from official DeepSeek usage. */
+export const TOKEN_CALIBRATION_KEY = 'deepseek-v4-bridge.tokenCalibration';
 
 // ---- Walkthrough ----
 
 /** Walkthrough contribution ID. */
-export const WALKTHROUGH_ID = 'Vizards.deepseek-v4-for-copilot#deepseekGettingStarted';
+export const WALKTHROUGH_ID = 'Vizards.deepseek-v4-bridge-local#deepseekV4BridgeGettingStarted';
+
+/** Distinct command prefix used by this extension. */
+export const COMMAND_PREFIX = 'deepseek-v4-bridge';
+
+/** Language model vendor ID registered by this extension. */
+export const PROVIDER_VENDOR = 'deepseek-v4-bridge';
 
 // ---- Model picker ----
 
 /** Detail text shown in the model picker when no API key is configured. */
-export const API_KEY_REQUIRED_DETAIL = 'Please run DeepSeek: Set API Key to configure.';
+export const API_KEY_REQUIRED_DETAIL =
+	'Please run DeepSeek V4 Bridge: Set API Key to configure.';
 
 /** Per-model configuration schema consumed by Copilot Chat's model picker. */
 export const THINKING_EFFORT_CONFIGURATION_SCHEMA = {
@@ -47,9 +57,12 @@ export const THINKING_EFFORT_CONFIGURATION_SCHEMA = {
 	},
 } as const;
 
+/** DeepSeek V4 output limit. Thinking tokens are included in this budget. */
+export const DEEPSEEK_V4_MAX_OUTPUT_TOKENS = 65536;
+
 // ---- Vision proxy ----
 
-/** Default model ID used for the vision proxy when auto-detection is enabled. */
+/** Preferred model ID used first for the vision proxy when it is available. */
 export const DEFAULT_VISION_MODEL_ID = 'oswe-vscode-prime';
 
 /**
@@ -73,9 +86,9 @@ export const MODELS: ModelDefinition[] = [
 		name: 'DeepSeek V4 Flash',
 		family: 'deepseek',
 		version: 'v4',
-		detail: 'Fast, general-purpose model',
+		detail: 'Fast V4 coding model - 1M context - thinking/tools',
 		maxInputTokens: 1048576,
-		maxOutputTokens: 393216,
+		maxOutputTokens: DEEPSEEK_V4_MAX_OUTPUT_TOKENS,
 		capabilities: {
 			toolCalling: true,
 			imageInput: true,
@@ -88,9 +101,9 @@ export const MODELS: ModelDefinition[] = [
 		name: 'DeepSeek V4 Pro',
 		family: 'deepseek',
 		version: 'v4',
-		detail: 'Most capable reasoning model',
+		detail: 'Most capable V4 reasoning model - 1M context - thinking/tools',
 		maxInputTokens: 1048576,
-		maxOutputTokens: 393216,
+		maxOutputTokens: DEEPSEEK_V4_MAX_OUTPUT_TOKENS,
 		capabilities: {
 			toolCalling: true,
 			imageInput: true,

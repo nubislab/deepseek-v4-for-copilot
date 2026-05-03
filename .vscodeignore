@@ -12,10 +12,10 @@ tsconfig.json
 *.vsix
 .vscode-test/
 .dev/**
+dist
 dist/**
 package-lock.json
 .DS_Store
 .env*
 !.env.example
 vscode.proposed.languageModelThinkingPart.d.ts
-

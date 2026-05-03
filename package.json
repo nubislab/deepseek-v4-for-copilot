@@ -1,9 +1,9 @@
 {
-  "name": "deepseek-v4-for-copilot",
-  "displayName": "DeepSeek V4 for Copilot Chat",
+  "name": "deepseek-v4-bridge-local",
+  "displayName": "DeepSeek V4 Bridge (Local Build)",
   "description": "Pick DeepSeek V4 Pro & Flash from the Copilot Chat model picker. Vision, thinking mode, agent tools — zero config, BYOK.",
   "icon": "resources/icon.png",
-  "version": "0.3.1",
+  "version": "0.3.1-local",
   "publisher": "Vizards",
   "license": "MIT",
   "repository": {
@@ -12,12 +12,13 @@
   },
   "engines": {
     "vscode": "^1.116.0",
-    "node": ">=24"
+    "node": ">=22"
   },
   "extensionDependencies": [
     "github.copilot-chat"
   ],
   "extensionKind": [
+    "ui",
     "workspace"
   ],
   "categories": [
@@ -43,56 +44,63 @@
   "activationEvents": [
     "onStartupFinished"
   ],
-  "enabledApiProposals": [],
+  "enabledApiProposals": [
+    "languageModelThinkingPart"
+  ],
   "main": "./out/extension.js",
   "contributes": {
     "languageModelChatProviders": [
       {
-        "vendor": "deepseek",
-        "displayName": "DeepSeek"
+        "vendor": "deepseek-v4-bridge",
+        "displayName": "DeepSeek V4 Bridge",
+        "managementCommand": "deepseek-v4-bridge.manage"
       }
     ],
     "commands": [
       {
-        "command": "deepseek-copilot.setApiKey",
-        "title": "DeepSeek: Set API Key"
+        "command": "deepseek-v4-bridge.manage",
+        "title": "DeepSeek V4 Bridge: Manage"
       },
       {
-        "command": "deepseek-copilot.getApiKey",
-        "title": "DeepSeek: Get API Key"
+        "command": "deepseek-v4-bridge.setApiKey",
+        "title": "DeepSeek V4 Bridge: Set API Key"
       },
       {
-        "command": "deepseek-copilot.clearApiKey",
-        "title": "DeepSeek: Clear API Key"
+        "command": "deepseek-v4-bridge.getApiKey",
+        "title": "DeepSeek V4 Bridge: Get API Key"
       },
       {
-        "command": "deepseek-copilot.setVisionModel",
-        "title": "DeepSeek: Set Vision Proxy Model"
+        "command": "deepseek-v4-bridge.clearApiKey",
+        "title": "DeepSeek V4 Bridge: Clear API Key"
       },
       {
-        "command": "deepseek-copilot.openSettings",
-        "title": "DeepSeek: Open Settings"
+        "command": "deepseek-v4-bridge.setVisionModel",
+        "title": "DeepSeek V4 Bridge: Set Vision Proxy Model"
       },
       {
-        "command": "deepseek-copilot.showLogs",
-        "title": "DeepSeek: Show Logs"
+        "command": "deepseek-v4-bridge.openSettings",
+        "title": "DeepSeek V4 Bridge: Open Settings"
+      },
+      {
+        "command": "deepseek-v4-bridge.showLogs",
+        "title": "DeepSeek V4 Bridge: Show Logs"
       }
     ],
     "walkthroughs": [
       {
-        "id": "deepseekGettingStarted",
-        "title": "DeepSeek V4 for Copilot Chat",
+        "id": "deepseekV4BridgeGettingStarted",
+        "title": "DeepSeek V4 Bridge for Copilot Chat",
         "description": "Set up DeepSeek V4 models in Copilot Chat.",
         "steps": [
           {
             "id": "setApiKey",
             "title": "Set your DeepSeek API key",
-            "description": "[Get an API key](command:deepseek-copilot.getApiKey) from deepseek.com.\n[Set API Key](command:deepseek-copilot.setApiKey)",
+            "description": "[Get an API key](command:deepseek-v4-bridge.getApiKey) from deepseek.com.\n[Set API Key](command:deepseek-v4-bridge.setApiKey)",
             "media": {
               "markdown": "resources/walkthrough/set-api-key.md"
             },
             "completionEvents": [
-              "onCommand:deepseek-copilot.setApiKey"
+              "onCommand:deepseek-v4-bridge.setApiKey"
             ]
           },
           {
@@ -107,20 +115,27 @@
       }
     ],
     "configuration": {
-      "title": "DeepSeek Copilot",
+      "title": "DeepSeek V4 Bridge",
       "properties": {
-        "deepseek-copilot.baseUrl": {
+        "deepseek-v4-bridge.baseUrl": {
           "type": "string",
           "default": "https://api.deepseek.com",
           "description": "DeepSeek API base URL. Defaults to official DeepSeek API endpoint."
         },
-        "deepseek-copilot.maxTokens": {
+        "deepseek-v4-bridge.maxTokens": {
           "type": "number",
           "default": 0,
           "minimum": 0,
-          "description": "Maximum number of output tokens per request. Set to 0 to use the API default (no limit). Useful for controlling costs."
+          "maximum": 65536,
+          "description": "Maximum number of output tokens per request. Set to 0 to use the DeepSeek V4 API default. Thinking tokens count toward this limit."
         },
-        "deepseek-copilot.modelIdOverrides": {
+        "deepseek-v4-bridge.apiKey": {
+          "type": "string",
+          "default": "",
+          "scope": "machine",
+          "markdownDescription": "Optional plaintext fallback for automation. Prefer **DeepSeek V4 Bridge: Set API Key**, which stores the key in VS Code SecretStorage."
+        },
+        "deepseek-v4-bridge.modelIdOverrides": {
           "type": "object",
           "default": {
             "deepseek-v4-flash": "deepseek-v4-flash",
@@ -139,12 +154,12 @@
             }
           }
         },
-        "deepseek-copilot.visionModel": {
+        "deepseek-v4-bridge.visionModel": {
           "type": "string",
           "default": "",
-          "description": "Model ID for vision proxy (describes images for text-only DeepSeek models). Leave empty for auto-detection. Use 'DeepSeek: Set Vision Proxy Model' command to pick one from a list."
+          "description": "Model ID for vision proxy (describes images for text-only DeepSeek models). Leave empty for auto-detection. Use 'DeepSeek V4 Bridge: Set Vision Proxy Model' command to pick one from a list."
         },
-        "deepseek-copilot.visionPrompt": {
+        "deepseek-v4-bridge.visionPrompt": {
           "type": "string",
           "editPresentation": "multilineText",
           "default": "Describe the visual contents of this image in detail, including any text, objects, people, or context that would be relevant for understanding it. Focus on factual visual elements.",
@@ -161,7 +176,7 @@
     "lint": "oxlint",
     "format": "oxfmt --write src/",
     "format:check": "oxfmt --check src/",
-    "package": "vsce package -o dist/",
+    "package": "node -e \"const fs=require('node:fs'); fs.rmSync('dist', { recursive: true, force: true }); fs.mkdirSync('dist', { recursive: true })\" && vsce package -o dist/deepseek-v4-bridge-local.vsix",
     "publish": "vsce publish",
     "login": "vsce login Vizards"
   },

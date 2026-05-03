@@ -69,12 +69,17 @@ export interface DeepSeekStreamChunk {
 		};
 		finish_reason: string | null;
 	}>;
-	usage?: {
-		prompt_tokens: number;
-		completion_tokens: number;
-		total_tokens: number;
-		prompt_cache_hit_tokens?: number;
-		prompt_cache_miss_tokens?: number;
+	usage?: DeepSeekUsage | null;
+}
+
+export interface DeepSeekUsage {
+	prompt_tokens: number;
+	completion_tokens: number;
+	total_tokens: number;
+	prompt_cache_hit_tokens?: number;
+	prompt_cache_miss_tokens?: number;
+	completion_tokens_details?: {
+		reasoning_tokens?: number;
 	};
 }
 
@@ -86,13 +91,7 @@ export interface StreamCallbacks {
 	onToolCall: (toolCall: DeepSeekToolCall) => void;
 	onError: (error: Error) => void;
 	onDone: () => void;
-	onUsage?: (usage: {
-		prompt_tokens: number;
-		completion_tokens: number;
-		total_tokens: number;
-		prompt_cache_hit_tokens?: number;
-		prompt_cache_miss_tokens?: number;
-	}) => void;
+	onUsage?: (usage: DeepSeekUsage) => void;
 }
 
 // ---- Model definitions ----

@@ -1,4 +1,4 @@
-import type { CancellationToken } from 'vscode';
+import vscode, { type CancellationToken } from 'vscode';
 import { logger } from './logger';
 import type {
 	DeepSeekRequest,
@@ -39,6 +39,14 @@ export class DeepSeekClient {
 				stream_options: { include_usage: true },
 			};
 
+			logger.info(
+				`Model Turn: stream → ${request.model}` +
+					` | messages=${request.messages.length}` +
+					` | tools=${request.tools?.length ?? 0}` +
+					` | thinking=${request.thinking?.type ?? 'off'}` +
+					` | effort=${request.reasoning_effort ?? '-'}`,
+			);
+
 			const response = await fetch(`${this.baseUrl}/chat/completions`, {
 				method: 'POST',
 				headers: {
@@ -58,7 +66,7 @@ export class DeepSeekClient {
 				} catch {
 					errorMessage = errorText;
 				}
-				throw new Error(`DeepSeek API error (${response.status}): ${errorMessage}`);
+				throw toLanguageModelError(response.status, errorMessage);
 			}
 
 			if (!response.body) {
@@ -181,4 +189,30 @@ export class DeepSeekClient {
 			cancelListener?.dispose();
 		}
 	}
+}
+
+function toLanguageModelError(status: number, message: string): Error {
+	const detail = message || 'No error details returned.';
+
+	if (status === 401 || status === 403) {
+		return vscode.LanguageModelError.NoPermissions(
+			`DeepSeek API rejected the configured API key (${status}): ${detail}`,
+		);
+	}
+
+	if (status === 404) {
+		return vscode.LanguageModelError.NotFound(
+			`DeepSeek API endpoint or model was not found (${status}): ${detail}`,
+		);
+	}
+
+	if (status === 402 || status === 429) {
+		return vscode.LanguageModelError.Blocked(
+			status === 429
+				? `DeepSeek API rate limit exceeded. Please retry later: ${detail}`
+				: `DeepSeek API account is blocked by billing or quota limits: ${detail}`,
+		);
+	}
+
+	return new Error(`DeepSeek API error (${status}): ${detail}`);
 }

@@ -1,7 +1,8 @@
 import vscode from 'vscode';
-import { WALKTHROUGH_ID, WELCOME_SHOWN_KEY } from './consts';
+import { COMMAND_PREFIX, PROVIDER_VENDOR, WALKTHROUGH_ID, WELCOME_SHOWN_KEY } from './consts';
 import { logger } from './logger';
 import { DeepSeekChatProvider } from './provider';
+import { TokenUsageTracker, createStatusBarItem } from './tokenUsage';
 
 let activeProvider: DeepSeekChatProvider | undefined;
 
@@ -9,28 +10,35 @@ export function activate(context: vscode.ExtensionContext) {
 	logger.info('Activating extension');
 
 	context.subscriptions.push(
-		vscode.commands.registerCommand('deepseek-copilot.showLogs', () => logger.show()),
-		vscode.commands.registerCommand('deepseek-copilot.getApiKey', () =>
+		vscode.commands.registerCommand(`${COMMAND_PREFIX}.showLogs`, () => logger.show()),
+		vscode.commands.registerCommand(`${COMMAND_PREFIX}.getApiKey`, () =>
 			vscode.env.openExternal(vscode.Uri.parse('https://platform.deepseek.com/api_keys')),
 		),
-		vscode.commands.registerCommand('deepseek-copilot.openSettings', () =>
-			vscode.commands.executeCommand('workbench.action.openSettings', 'deepseek-copilot'),
+		vscode.commands.registerCommand(`${COMMAND_PREFIX}.openSettings`, () =>
+			vscode.commands.executeCommand('workbench.action.openSettings', COMMAND_PREFIX),
 		),
 	);
 
 	try {
-		const provider = new DeepSeekChatProvider(context);
+		// Create session-scoped token usage tracker.
+		const tokenUsageTracker = new TokenUsageTracker();
+
+		// Create and register the status bar item (pushed into subscriptions).
+		createStatusBarItem(context, tokenUsageTracker);
+
+		const provider = new DeepSeekChatProvider(context, tokenUsageTracker);
 		activeProvider = provider;
 
 		context.subscriptions.push(
-			vscode.commands.registerCommand('deepseek-copilot.setApiKey', () =>
+			vscode.commands.registerCommand(`${COMMAND_PREFIX}.setApiKey`, () =>
 				provider.configureApiKey(),
 			),
-			vscode.commands.registerCommand('deepseek-copilot.clearApiKey', () => provider.clearApiKey()),
-			vscode.commands.registerCommand('deepseek-copilot.setVisionModel', () =>
+			vscode.commands.registerCommand(`${COMMAND_PREFIX}.clearApiKey`, () => provider.clearApiKey()),
+			vscode.commands.registerCommand(`${COMMAND_PREFIX}.setVisionModel`, () =>
 				provider.setVisionProxyModel(),
 			),
-			vscode.lm.registerLanguageModelChatProvider('deepseek', provider),
+			vscode.commands.registerCommand(`${COMMAND_PREFIX}.manage`, () => provider.manage()),
+			vscode.lm.registerLanguageModelChatProvider(PROVIDER_VENDOR, provider),
 		);
 
 		// Fix(#12): configurationSchema (Thinking Effort dropdown) is a non-public
@@ -61,7 +69,7 @@ export function activate(context: vscode.ExtensionContext) {
 		activeProvider = undefined;
 		logger.error('Failed to activate DeepSeek extension', error);
 		void vscode.window.showErrorMessage(
-			'DeepSeek failed to activate. Run "DeepSeek: Show Logs" for details.',
+			'DeepSeek V4 Bridge failed to activate. Run "DeepSeek V4 Bridge: Show Logs" for details.',
 		);
 		throw error;
 	}

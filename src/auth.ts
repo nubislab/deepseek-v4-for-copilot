@@ -1,5 +1,5 @@
 import vscode from 'vscode';
-import { API_KEY_SECRET } from './consts';
+import { API_KEY_SECRET, CONFIG_SECTION } from './consts';
 
 /**
  * Manages DeepSeek API key via VS Code SecretStorage (secure) with
@@ -21,7 +21,7 @@ export class AuthManager {
 			return secretKey;
 		}
 
-		const config = vscode.workspace.getConfiguration('deepseek-copilot');
+		const config = vscode.workspace.getConfiguration(CONFIG_SECTION);
 		const settingsKey = config.get<string>('apiKey');
 		if (settingsKey?.trim()) {
 			return settingsKey.trim();
@@ -42,6 +42,12 @@ export class AuthManager {
 	 */
 	async deleteApiKey(): Promise<void> {
 		await this.secretStorage.delete(API_KEY_SECRET);
+
+		const config = vscode.workspace.getConfiguration(CONFIG_SECTION);
+		await Promise.allSettled([
+			config.update('apiKey', undefined, vscode.ConfigurationTarget.Global),
+			config.update('apiKey', undefined, vscode.ConfigurationTarget.Workspace),
+		]);
 	}
 
 	/**
